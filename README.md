@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34249854/README.md)
 # ASCLC_Pythonized
 
 An early-stage Python prototype for analytical space-charge-limited current (A-SCLC) analysis. It converts measured current–voltage data into current density, local logarithmic slopes, effective mobility, labelled carrier concentrations, and quasi-Fermi-level estimates, and compares these quantities with a density-of-states occupation model.
