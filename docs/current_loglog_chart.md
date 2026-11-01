@@ -29,6 +29,29 @@ do not apply to this chart.
 
 ## Reference equations and source differences
 
+### Visualisation aids for the plotted slope references
+
+Confirmed by the user on 2026-11-01: retain the two dimensionless amplitude
+factors as visualisation aids. They position the slope references to make
+the linear and quadratic voltage dependence easier to compare with the
+model curve:
+
+| Python constant | Value | Verified source in `data/SCLCKopecky.xlsx` | Effect |
+| --- | ---: | --- | --- |
+| `_OHMIC_FACTOR` | 2.0 | `MODEL!L3`; `K2` and `K3` multiply by `$L$3` | Multiplies the Ohmic reference current density by 2 |
+| `_MOTT_GURNEY_FACTOR` | 0.4 | `MODEL!O3`; `N2` and `N3` divide by `O$3` | Multiplies the Mott–Gurney reference current density by 2.5 |
+
+These factors are applied in `asclc_plotting.py::plot_model_current` when
+the optional references are supplied. They shift the reference lines
+vertically while preserving their logarithmic slopes of 1 and 2. They do
+not alter the calculated model currents, carrier populations, or measured
+data. Their amplitudes are chosen for visualisation rather than derived
+from the governing equations, so the shifted lines are slope guides rather
+than unmodified quantitative Ohmic and Mott–Gurney predictions. Both factors
+are retained unchanged.
+
+### Governing equations and comparison
+
 In the low-injection Ohmic limit, take the equilibrium free-hole density
 pf0 and a uniform field F=U/L. Drift gives j=e μ0 pf0 U/L, hence slope
 d ln(j)/d ln(U)=1. This assumes a maintained equilibrium reservoir and

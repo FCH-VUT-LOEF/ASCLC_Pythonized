@@ -1,0 +1,389 @@
+{
+  "01b_MABI_SnO2_3_1": {
+    "configuration": {
+      "device": {
+        "area": 4.82e-06,
+        "voltage_offset": 0.0
+      },
+      "experiment": {
+        "T": 308.0,
+        "T0": 273.15,
+        "regime": "dark",
+        "sample": "Cs3Bi2I9"
+      },
+      "material": {
+        "E_c": -3.73,
+        "E_g": 2.17,
+        "E_v": -5.9,
+        "L": 2e-07,
+        "S": 4.82e-06,
+        "eps_r": 25.5,
+        "m_eff_e": 0.32,
+        "m_eff_p": 0.305
+      },
+      "numerics": {
+        "window": 11
+      },
+      "params": {
+        "E_F0": -5.63,
+        "E_t": -5.625,
+        "N_t": 9e+22,
+        "T_t": 5.0,
+        "mu_0": 3e-09
+      }
+    },
+    "notebook_sha256": "d018ef217ba72b9cda52f008675ce4e1e712c57973db79f842c92f5c0fc14b45",
+    "source_sha256": "6515148a5882f9766489af4ea6f5b9d6edd49fa25788b9fb287fa25faf7d6373",
+    "measurement_sha256": "4cc610c69a33c5e215ec5e81623c04d1bd546e129e42dceae5beedffbc3e26da",
+    "calculation_sha256": {
+      "asclc_backend.py": "a0bf812aa515201a85a6b02c17d72fed2abde5233aa343185abdb74d0372c30b",
+      "asclc_workflow.py": "60d94d3d5430b610a4c68b081922d0a2c4cb83332c00662816b55a7e772585ff"
+    },
+    "source_measurements": 500,
+    "python_valid_gamma": 490,
+    "reference_theta_gt1": 0,
+    "python_theta_gt1": 59,
+    "reference_trapped_negative": 0,
+    "python_trapped_negative": 117,
+    "reference_theta_range": [
+      -5.906845069779246,
+      0.5535694758246545
+    ],
+    "python_theta_range": [
+      -112.06260413504968,
+      53.959093187415974
+    ],
+    "reference_gamma_values": [
+      0.0
+    ],
+    "source_trap_area_over_Nt": 1.7478868202261961,
+    "python_trap_area_over_Nt": 0.7962675383475657,
+    "common_model_coordinate_max_abs_error": 3.415462357381216e-13,
+    "common_DOS_coordinate_max_abs_error": 1.7763568394002505e-15,
+    "displayed_transport_pairs": 53,
+    "equilibrium": [
+      [
+        "n_s0",
+        "C3",
+        4.171397399947449e+27,
+        4.1745692703185277e+27,
+        3.1718703710785796e+24,
+        0.0007603855655465813
+      ],
+      [
+        "n_f0",
+        "F3",
+        3.7592398954266115e-07,
+        3.846943271155297e-07,
+        8.770337572868549e-09,
+        0.02333008218905716
+      ],
+      [
+        "p_s0",
+        "K3",
+        5.92452003961718e+27,
+        5.923131260619796e+27,
+        -1.388778997383706e+24,
+        0.00023441206850461488
+      ],
+      [
+        "p_f0",
+        "N3",
+        1.6787030096629776e+20,
+        1.680304873445073e+20,
+        1.6018637820952576e+17,
+        0.0009542270269812964
+      ]
+    ],
+    "measured_examples": [
+      {
+        "index": 0,
+        "source_row": 9,
+        "U_reference": 0.00043869,
+        "U_python": 0.020120789999999996,
+        "theta_reference": -5.906845069779246,
+        "theta_python": -7.621050281106935,
+        "pt_reference": 3.0913268455056183e+19,
+        "pt_python": -2.911638793377712e+20
+      },
+      {
+        "index": 250,
+        "source_row": 259,
+        "U_reference": 1.00003,
+        "U_python": 1.0200754545454545,
+        "theta_reference": 0.02522729952137367,
+        "theta_python": 0.036798666578164906,
+        "pt_reference": 7.046934248127341e+22,
+        "pt_python": 6.01721520231193e+22
+      },
+      {
+        "index": 489,
+        "source_row": 498,
+        "U_reference": 1.95628,
+        "U_python": 1.9761581818181817,
+        "theta_reference": 0.5266424623810848,
+        "theta_python": 0.8876043407964135,
+        "pt_reference": 1.3785362970037455e+23,
+        "pt_python": 1.0700333470962594e+22
+      }
+    ]
+  },
+  "02b_MABI_PEDOT_5_1": {
+    "configuration": {
+      "device": {
+        "area": 4.5e-06,
+        "voltage_offset": 0.01
+      },
+      "experiment": {
+        "T": 308.0,
+        "T0": 273.15,
+        "regime": "dark",
+        "sample": "MA3Bi2I9"
+      },
+      "material": {
+        "E_c": -3.73,
+        "E_g": 2.17,
+        "E_v": -5.9,
+        "L": 3.65e-07,
+        "S": 4.5e-06,
+        "eps_r": 15.0,
+        "m_eff_e": 0.32,
+        "m_eff_p": 0.305
+      },
+      "numerics": {
+        "window": 11
+      },
+      "params": {
+        "E_F0": -5.615,
+        "E_t": -5.62,
+        "N_t": 1e+23,
+        "T_t": 20.0,
+        "mu_0": 2.13e-06
+      }
+    },
+    "notebook_sha256": "0b5bc79a680a7c3c7b224a93f2f166cbbc376d6219b1150bc66e8396ee74fdf3",
+    "source_sha256": "0e813727698c5e1a05014d1e8cb33af6de0fc9c8e07f9d8d2a83f719e89b195b",
+    "measurement_sha256": "75625a48d207bb48b62093fe2e33b97609380a7eb7d77b412a3a8d5317c53d34",
+    "calculation_sha256": {
+      "asclc_backend.py": "a0bf812aa515201a85a6b02c17d72fed2abde5233aa343185abdb74d0372c30b",
+      "asclc_workflow.py": "60d94d3d5430b610a4c68b081922d0a2c4cb83332c00662816b55a7e772585ff"
+    },
+    "source_measurements": 499,
+    "python_valid_gamma": 489,
+    "reference_theta_gt1": 0,
+    "python_theta_gt1": 87,
+    "reference_trapped_negative": 0,
+    "python_trapped_negative": 87,
+    "reference_theta_range": [
+      0.012612559295858606,
+      0.30605970323148296
+    ],
+    "python_theta_range": [
+      0.02438422075503064,
+      3.1963186692603376
+    ],
+    "reference_gamma_values": [
+      0.0
+    ],
+    "source_trap_area_over_Nt": 0.7799525317337136,
+    "python_trap_area_over_Nt": 0.7853981631754507,
+    "common_model_coordinate_max_abs_error": 3.415462357381216e-13,
+    "common_DOS_coordinate_max_abs_error": 1.7763568394002505e-15,
+    "displayed_transport_pairs": 11,
+    "equilibrium": [
+      [
+        "n_s0",
+        "C3",
+        4.171368835163778e+27,
+        4.174579823969877e+27,
+        3.210988806098757e+24,
+        0.0007697686138494358
+      ],
+      [
+        "n_f0",
+        "F3",
+        6.616558270131165e-07,
+        6.769545706296435e-07,
+        1.529874361652699e-08,
+        0.023121905667466768
+      ],
+      [
+        "p_s0",
+        "K3",
+        5.924469289840205e+27,
+        5.923127582706314e+27,
+        -1.341707133891214e+24,
+        0.00022646874652419756
+      ],
+      [
+        "p_f0",
+        "N3",
+        9.537714325270358e+19,
+        9.548757814003794e+19,
+        1.1043488733436314e+17,
+        0.0011578758135139756
+      ]
+    ],
+    "measured_examples": [
+      {
+        "index": 0,
+        "source_row": 9,
+        "U_reference": 0.014360000000000001,
+        "U_python": 0.03421363636363636,
+        "theta_reference": 0.2569401015157042,
+        "theta_python": 1.235767203422875,
+        "pt_reference": 1.787174551232989e+20,
+        "pt_python": -2.9485201769434202e+19
+      },
+      {
+        "index": 249,
+        "source_row": 258,
+        "U_reference": 1.01035,
+        "U_python": 1.0303945454545456,
+        "theta_reference": 0.01571669764086424,
+        "theta_python": 0.07638169326130807,
+        "pt_reference": 1.2574316210572774e+22,
+        "pt_python": 3.429810988434479e+21
+      },
+      {
+        "index": 488,
+        "source_row": 497,
+        "U_reference": 1.96652,
+        "U_python": 1.9863936363636367,
+        "theta_reference": 0.016545266829590292,
+        "theta_python": 0.035936122035349405,
+        "pt_reference": 2.4474334947706808e+22,
+        "pt_python": 1.3299928969400455e+22
+      }
+    ]
+  },
+  "SCLCKopecky": {
+    "configuration": {
+      "device": {
+        "area": 7.7e-06,
+        "voltage_offset": 0.0
+      },
+      "experiment": {
+        "T": 299.0,
+        "T0": 273.15,
+        "regime": "dark",
+        "sample": "MAPbBr3"
+      },
+      "material": {
+        "E_c": -3.36,
+        "E_g": 2.22,
+        "E_v": -5.58,
+        "L": 0.0006,
+        "S": 7.7e-06,
+        "eps_r": 25.5,
+        "m_eff_e": 0.32,
+        "m_eff_p": 0.305
+      },
+      "numerics": {
+        "window": 11
+      },
+      "params": {
+        "E_F0": -4.84,
+        "E_t": -4.82,
+        "N_t": 4.7e+16,
+        "T_t": 30.0,
+        "mu_0": 0.0027
+      }
+    },
+    "notebook_sha256": "ab40eaf8d5f974e725cda3e2fa9244802dbf71066fc506ba9572c016b2a839e7",
+    "source_sha256": "f755b74181222c376f114eb687c92c50b9f3842902e53b312cc6f01c2589aa15",
+    "measurement_sha256": "bc7426d3da6f58c2e8bb0bd072491f94ac46d7a5d06d282cb4b435749d3a484b",
+    "calculation_sha256": {
+      "asclc_backend.py": "a0bf812aa515201a85a6b02c17d72fed2abde5233aa343185abdb74d0372c30b",
+      "asclc_workflow.py": "60d94d3d5430b610a4c68b081922d0a2c4cb83332c00662816b55a7e772585ff"
+    },
+    "source_measurements": 214,
+    "python_valid_gamma": 204,
+    "reference_theta_gt1": 1,
+    "python_theta_gt1": 0,
+    "reference_trapped_negative": 0,
+    "python_trapped_negative": 0,
+    "reference_theta_range": [
+      -0.0220989434133983,
+      1.7008623000316914
+    ],
+    "python_theta_range": [
+      0.0002535471015010669,
+      0.22214693481813685
+    ],
+    "reference_gamma_values": [
+      0.0
+    ],
+    "source_trap_area_over_Nt": 0.7850791000109467,
+    "python_trap_area_over_Nt": 0.7853981633974504,
+    "common_model_coordinate_max_abs_error": 3.415462357381216e-13,
+    "common_DOS_coordinate_max_abs_error": 1.7763568394002505e-15,
+    "displayed_transport_pairs": 74,
+    "equilibrium": [
+      [
+        "n_s0",
+        "C3",
+        4.833869891256669e+27,
+        4.8373959632192696e+27,
+        3.526071962600802e+24,
+        0.0007294511523735123
+      ],
+      [
+        "n_f0",
+        "F3",
+        0.49629442015723835,
+        0.5111616025105695,
+        0.014867182353331176,
+        0.029956376194237456
+      ],
+      [
+        "p_s0",
+        "K3",
+        5.065430627403648e+27,
+        5.064081972748852e+27,
+        -1.3486546547967042e+24,
+        0.0002662467920299946
+      ],
+      [
+        "p_f0",
+        "N3",
+        1386704721143.2336,
+        1413554759120.7964,
+        26850037977.562744,
+        0.019362476789887114
+      ]
+    ],
+    "measured_examples": [
+      {
+        "index": 0,
+        "source_row": 9,
+        "U_reference": 0.0070311408691406405,
+        "U_python": 0.07734254223600909,
+        "theta_reference": 1.7008623000316914,
+        "theta_python": 0.0017610185107102615,
+        "pt_reference": 55051667776805.61,
+        "pt_python": 742160086853708.2
+      },
+      {
+        "index": 107,
+        "source_row": 116,
+        "U_reference": 1.5116951301263157,
+        "U_python": 1.5820065314909089,
+        "theta_reference": 0.00026080189745533093,
+        "theta_python": 0.0015622356402908168,
+        "pt_reference": 1.1836107344795712e+16,
+        "pt_python": 1.2093023760438266e+16
+      },
+      {
+        "index": 203,
+        "source_row": 212,
+        "U_reference": 2.8615802878404657,
+        "U_python": 2.9314698208,
+        "theta_reference": 0.12268483292406186,
+        "theta_python": 0.1628771224390318,
+        "pt_reference": 2.240529243472593e+16,
+        "pt_python": 1.8849351149182004e+16
+      }
+    ]
+  }
+}

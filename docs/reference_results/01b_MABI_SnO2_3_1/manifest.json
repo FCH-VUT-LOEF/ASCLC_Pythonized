@@ -1,0 +1,146 @@
+{
+  "source": "data/01b_MABI_SnO2 _3_1.xlsx",
+  "source_sha256": "6515148a5882f9766489af4ea6f5b9d6edd49fa25788b9fb287fa25faf7d6373",
+  "extraction_date": "2026-11-01",
+  "method": "Stored XML cell values; no recalculation, float conversion, rounding, interpolation, or parameter changes.",
+  "tables": {
+    "measurements": {
+      "file": "measurements.csv",
+      "sheet": "Data-calculations",
+      "first_row": 13,
+      "last_row": 512,
+      "row_count": 500,
+      "column_mapping": {
+        "U_raw_V": "A",
+        "I_raw_A": "B",
+        "temperature_raw": "C",
+        "U_processed_V": "E",
+        "J_processed_Am2": "G",
+        "ln_abs_U_raw": "I",
+        "ln_abs_J_raw": "J",
+        "gamma": "K",
+        "temperature_processed_K": "N",
+        "activation_energy_eV": "O"
+      },
+      "sha256": "76181b297e4ea46b8df27f7a1fd273794872891c87438cedde13faf2eb52ede8"
+    },
+    "inferred_results": {
+      "file": "inferred_results.csv",
+      "sheet": "MODEL",
+      "first_row": 9,
+      "last_row": 508,
+      "row_count": 500,
+      "column_mapping": {
+        "U_V": "E",
+        "J_Am2": "G",
+        "mu_eff_m2Vs": "I",
+        "free_density_m3": "K",
+        "labelled_trapped_density_m3": "M",
+        "labelled_total_density_m3": "O",
+        "density_derivative_m3eV": "P",
+        "theta": "Q",
+        "E_F_absolute_eV": "S",
+        "trap_energy_expression_eV": "U",
+        "theta_energy_expression_eV": "W"
+      },
+      "sha256": "9f67dc2fe96421186120d243b6a3ca034a050229bdfc385b71eb1f0040bc09d1"
+    },
+    "dos": {
+      "file": "dos.csv",
+      "sheet": "g(E)",
+      "first_row": 13,
+      "last_row": 3013,
+      "row_count": 3001,
+      "column_mapping": {
+        "energy_eV": "A",
+        "interval_width_eV": "B",
+        "E_minus_Ev_eV": "C",
+        "Ec_minus_E_eV": "D",
+        "g_valence_m3eV": "F",
+        "g_conduction_m3eV": "I",
+        "g_valence_tail_component_m3eV": "M",
+        "g_active_trap_component_m3eV": "P",
+        "g_conduction_tail_component_m3eV": "S",
+        "g_Gaussian_component_m3eV": "V",
+        "g_conduction_switched_m3eV": "X",
+        "g_valence_switched_m3eV": "Y",
+        "g_total_m3eV": "Z",
+        "f_equilibrium": "AA",
+        "occupied_DOS_m3eV": "AB",
+        "one_minus_f_equilibrium": "AC",
+        "empty_DOS_m3eV": "AD"
+      },
+      "sha256": "3d628a9d4e4bff91439bd9699f67543202296d0cca0f1f50c131e0ce41f1c77c"
+    },
+    "fermi_probabilities": {
+      "file": "fermi_probabilities.csv",
+      "sheet": "FD-funkce",
+      "first_row": 9,
+      "last_row": 6009,
+      "row_count": 6001,
+      "column_mapping": {
+        "relative_energy_eV": "A",
+        "f": "B",
+        "one_minus_f": "C"
+      },
+      "sha256": "661f7788439056b302d861104dfc23c01db5a1d2020712a7ba41fa4a1eb9358c"
+    },
+    "occupations": {
+      "file": "occupations.csv",
+      "sheet": "n(E)",
+      "first_row": 9,
+      "last_row": 3009,
+      "row_count": 3001,
+      "column_mapping": {
+        "E_F_eV": "A",
+        "E_F_minus_Ec_eV": "B",
+        "n_s_m3": "C",
+        "dn_s_dEF_m3eV": "D",
+        "n_f_m3": "E",
+        "dn_f_dEF_m3eV": "F",
+        "theta_n": "G",
+        "n_t_m3": "H",
+        "E_F_minus_Ev_eV": "I",
+        "p_s_m3": "J",
+        "dp_s_dEF_m3eV": "K",
+        "p_f_m3": "L",
+        "dp_f_dEF_m3eV": "M",
+        "theta_p": "N",
+        "p_t_m3": "O"
+      },
+      "sha256": "0c013862da73f0810077ab2d8c86c983de4940f5cfece47df7fd4100b9eb965c"
+    },
+    "transport": {
+      "file": "transport.csv",
+      "sheet": "j(U)",
+      "first_row": 9,
+      "last_row": 3009,
+      "row_count": 3001,
+      "column_mapping": {
+        "E_F_eV": "A",
+        "U_n_V": "B",
+        "U_p_V": "C",
+        "J_n_Am2": "D",
+        "J_p_Am2": "E",
+        "negative_U_n_V": "F",
+        "negative_U_p_V": "G",
+        "negative_J_n_Am2": "H",
+        "negative_J_p_Am2": "I",
+        "mu_n_m2Vs": "J",
+        "mu_p_m2Vs": "K"
+      },
+      "sha256": "926b866d443bdb2dac6146678d5ce07a5bf8cd03e33a286f275b1b8991a4e7af"
+    },
+    "controls": {
+      "file": "controls.csv",
+      "row_count": 143,
+      "sha256": "a6f3ecc35b826cf18571df3d29b45cbf3dc2d9cd219f7510757616042bd3d6cd"
+    },
+    "errors": {
+      "file": "errors.csv",
+      "row_count": 2553,
+      "sha256": "c8f877ee1665058cd893969e6d0e3a36b16892973b9436afa2be3412847ede22"
+    }
+  },
+  "verified_exported_table_cells": 157546
+}

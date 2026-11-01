@@ -5,15 +5,22 @@ power-of-ten tick labels on logarithmic axes, frameless legends). Axis titles
 and series names use the notation of the published equations: Voltage, U (V) /
 Current density, j (A/m2); series "j". Each function takes the ``Calculation``
 returned by ``run_calculation`` and returns ``(figure, axes)``.
+
+Model plots accept ``temperature_models`` from ``run_temperature_models``.
+None retains the single-model view. A supplied sequence replaces model curves
+with temperature-labelled curves, coloured from blue (cold) to red (hot).
 """
 import matplotlib.pyplot as plt
+from types import SimpleNamespace
+
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.ticker import LogFormatterSciNotation
 from matplotlib.transforms import Bbox
 import numpy as np
 
 from asclc_backend import (centered_mean, equal_density_voltage, E_CHARGE, EPSILON_0,
                            valence_band_dos, conduction_band_dos,
-                           trap_dos, DOS_FLOOR,
+                           trap_dos, DOS_FLOOR, K_B,
                            fermi_dirac_probabilities)
 
 _FIGSIZE = (7.2, 4.5)
@@ -21,17 +28,31 @@ _FIGSIZE = (7.2, 4.5)
 _U_AXIS = "Voltage, $U$ (V)"
 _J_AXIS = "Current density, $j$ (A/m$^2$)"
 _P_AXIS = r"Carrier concentration (m$^{-3}$)"
-_THETA_AXIS = r"Fraction of free charge, $\Theta$ (-)"
+_THETA_AXIS = r"Carrier ratio, $\Theta$ (-)"
 _E_AXIS = r"Energy, $E$ (eV)"
 _G_AXIS = r"Density of states, $g(E)$ (m$^{-3}$eV$^{-1}$)"
 
-# Reference-line amplitudes from the workbook, MODEL!L3 and MODEL!O3. K2 and
-# N2 carry them as "* $L$3" and "/ $O$3" on the Ohmic and Mott-Gurney
-# expressions. They have no derivation in the governing equations; they are
-# what places both references around the M4 curve, whose own limits are
-# (2 - gamma) times Ohmic and (8/9)(1 - gamma)(2 - gamma)**2 times Mott-Gurney.
-_OHMIC_FACTOR = 2.0        # MODEL!L3
-_MOTT_GURNEY_FACTOR = 0.4  # MODEL!O3
+# Dimensionless visualisation aids: multiply the Ohmic amplitude by 2 and
+# divide the Mott-Gurney amplitude by 0.4. These vertical shifts preserve
+# logarithmic slopes of 1 and 2; they do not modify the model calculation.
+_OHMIC_FACTOR = 2.0
+_MOTT_GURNEY_FACTOR = 0.4
+
+
+def _temperature_series(temperature_models, **baseline):
+    """Share temperature colours across charts; None preserves single-model style."""
+    if temperature_models is None:
+        yield SimpleNamespace(**baseline), {}, ''
+        return
+    if not temperature_models:
+        raise ValueError('Supply at least one temperature model.')
+    temperatures = np.array([item.temperature for item in temperature_models])
+    if not np.isfinite(temperatures).all() or np.any(temperatures <= 0):
+        raise ValueError('Model temperatures must be finite and positive (K).')
+    norm = Normalize(temperatures.min(), temperatures.max())
+    colours = LinearSegmentedColormap.from_list('temperature', ['blue', 'red'])
+    for item in temperature_models:
+        yield item, dict(color=colours(norm(item.temperature))), f', {item.temperature:g} K'
 
 
 def _style(ax, *, xlabel, ylabel):
@@ -93,7 +114,8 @@ def plot_smoothed_jv(result, *, window):
 
 
 def plot_effective_mobility(result, mobility, *, mu_0=None,
-                            model_mobility=None, model_current=None):
+                            model_mobility=None, model_current=None,
+                            temperature_models=None):
     """Measured and optional model hole mobility versus voltage, linear/log.
 
     ``mobility`` is the ``Mobility`` returned by ``run_effective_mobility``;
@@ -122,11 +144,17 @@ def plot_effective_mobility(result, mobility, *, mu_0=None,
     ax.set_yscale("log")
     ax.plot(v[ok], mu[ok], "o", ms=4, label=r"$\mu_d$")
     xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    if model_mobility is not None:
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model_mobility=model_mobility, model_current=model_current):
+        model_mobility, model_current = dataset.model_mobility, dataset.model_current
+        if model_mobility is None:
+            continue
+        if not np.array_equal(model_mobility.E_F, model_current.E_F):
+            raise ValueError("Model mobilities and voltages must share the E_F sweep.")
         valid = np.isfinite(model_current.U_p) & _finite_positive(model_mobility.mu_p)
         ax.plot(np.where(valid, model_current.U_p, np.nan),
                 np.where(valid, model_mobility.mu_p, np.nan),
-                label=r'$\mu_{d,m}$ (p)')
+                label=r'$\mu_{d,m}$ (p)' + suffix, **colour)
     if mu_0 is not None:
         ax.axhline(mu_0, ls="--", lw=1.2, color="0.35", label=r"$\mu_0$")
     ax.set_xlim(xlim)
@@ -156,7 +184,7 @@ def plot_local_gamma(result, mobility):
 
 
 def plot_carrier_densities(carriers, *, model=None, model_current=None,
-                           xscale="linear"):
+                           xscale="linear", temperature_models=None):
     """Free and trapped concentrations against voltage, the axes of Fig. 4a.
 
     ``carriers`` is the ``Carriers`` returned by ``run_carrier_densities``:
@@ -165,9 +193,10 @@ def plot_carrier_densities(carriers, *, model=None, model_current=None,
     occupy the transport band (guide step A4); each crossing is drawn as a
     vertical line. Linear voltage against logarithmic concentration, as in
     Fig. 4a and as in ``plot_effective_mobility``. Nonpositive values -- the
-    rows where equation (6) turns negative, and, under the default reading, rows
-    needing more mobility than ``mu_0`` -- stay in the data but cannot appear on
-    a logarithmic axis. Supplying model occupations and their paired voltages
+    rows where equation (6) turns negative, or an explicitly selected
+    total-charge decomposition gives a negative trapped population -- stay
+    in the data but cannot appear on a logarithmic axis. Supplying model
+    occupations and their paired voltages
     adds both hole densities on U_p and omits crossing annotations. Display
     limits follow the measured densities only. Set ``xscale="log"`` for
     logarithmic voltage; nonpositive voltages then cannot be displayed.
@@ -188,18 +217,27 @@ def plot_carrier_densities(carriers, *, model=None, model_current=None,
     ax.set_yscale("log")
     ax.plot(v[trapped], p_t[trapped], "o", ms=4, label=r"$p_t$ (m$^{-3}$)")
     ax.plot(v[free], p_f[free], "o", ms=4, label=r"$p_f$ (m$^{-3}$)")
-    if model is not None:
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        u = np.asarray(model_current.U_p, float)
-        for density, label in ((model.p_t, r'$p_{tm}$'),
-                               (model.p_f, r'$p_{fm}$')):
+    has_model = model is not None or temperature_models is not None
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model=model, model_current=model_current):
+        if dataset.model is None:
+            continue
+        if not np.array_equal(dataset.model.E_F, dataset.model_current.E_F):
+            raise ValueError('Model densities and voltages must share the E_F sweep.')
+        u = np.asarray(dataset.model_current.U_p, float)
+        for density, label, style in ((dataset.model.p_t, r'$p_{tm}$', '-'),
+                                      (dataset.model.p_f, r'$p_{fm}$', '--')):
             valid_u = _finite_positive(u) if xscale == "log" else np.isfinite(u)
             valid = valid_u & _finite_positive(density)
             ax.plot(np.where(valid, u, np.nan),
-                    np.where(valid, density, np.nan), label=label)
+                    np.where(valid, density, np.nan),
+                    ls=style if temperature_models is not None else '-',
+                    label=label + suffix, **colour)
+    if has_model:
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-    crossings = equal_density_voltage(v, p_f, p_t) if model is None else ()
+    crossings = equal_density_voltage(v, p_f, p_t) if not has_model else ()
     for crossing in crossings:
         ax.axvline(crossing, ls="--", lw=1.0, color="0.5")
         ax.annotate(rf"$p_\mathrm{{t}} = p_\mathrm{{f}}$, {crossing:.2f} V",
@@ -207,17 +245,17 @@ def plot_carrier_densities(carriers, *, model=None, model_current=None,
                     rotation=90, va="bottom", ha="right", fontsize="small",
                     color="0.4")
     _style(ax, xlabel=_U_AXIS,
-           ylabel=r"charge density, $n_f$, $n_t$ (m$^{-3}$)" if model is not None else _P_AXIS)
+           ylabel=r"charge density, $n_f$, $n_t$ (m$^{-3}$)" if has_model else _P_AXIS)
     return fig, ax
 
 
-def plot_carrier_fraction(carriers, *, model=None, model_current=None):
+def plot_carrier_fraction(carriers, *, model=None, model_current=None,
+                          temperature_models=None):
     """Parameter theta against voltage, the axes of Supplementary Fig. S19.
 
-    ``Theta`` is the fraction of free charge in the total, equation (S12); under
-    the default reading of equation (6) it is identically ``mu_eff / mu_0``, so
-    the dashed lines mark the two values the article names: ``Theta = 1`` in the
-    ohmic and Mott-Gurney regions, and ``Theta = 1/2`` where ``p_t = p_f``.
+    By default ``Theta = p_f / p_t = mu_eff / mu_0``, an unbounded ratio;
+    equal labelled trapped and free densities give ``Theta = 1``. For an
+    explicitly selected free-over-total reading, equality gives one half.
     Points above 1 need more mobility than the ``mu_0`` in use; they are drawn,
     not clipped. Linear voltage against logarithmic ``Theta``; nonpositive
     values -- the rows where equation (6) turns negative -- stay in the data but
@@ -231,38 +269,53 @@ def plot_carrier_fraction(carriers, *, model=None, model_current=None):
     ok = np.isfinite(v) & _finite_positive(theta)
     fig, ax = plt.subplots(figsize=_FIGSIZE)
     ax.set_yscale("log")
-    references = ((1.0, r"$p_\mathrm{t} \ll p_\mathrm{f}$"),
-                  (0.5, r"$p_\mathrm{t} = p_\mathrm{f}$")) if model is None else ()
+    if model is None and temperature_models is None:
+        if carriers.theta_model == "mobility_ratio":
+            references = ((1.0, r"$p_\mathrm{t} = p_\mathrm{f}$"),)
+        else:
+            references = ((1.0, r"$p_\mathrm{t} \ll p_\mathrm{f}$"),
+                          (0.5, r"$p_\mathrm{t} = p_\mathrm{f}$"))
+    else:
+        references = ()
     for level, name in references:
         ax.axhline(level, ls="--", lw=1.0, color="0.5")
         ax.annotate(name, (0.01, level), xycoords=("axes fraction", "data"),
                     va="bottom", fontsize="small", color="0.4")
     ax.plot(np.where(ok, v, np.nan), np.where(ok, theta, np.nan),
             "o", ms=4, label=r"$\Theta$")
-    if model is not None:
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        valid = np.isfinite(model_current.U_p) & _finite_positive(model.theta_p)
-        ax.plot(np.where(valid, model_current.U_p, np.nan),
-                np.where(valid, model.theta_p, np.nan), label=r'$\Theta_m$')
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model=model, model_current=model_current):
+        if dataset.model is None:
+            continue
+        if not np.array_equal(dataset.model.E_F, dataset.model_current.E_F):
+            raise ValueError('Model fractions and voltages must share the E_F sweep.')
+        valid = np.isfinite(dataset.model_current.U_p) & _finite_positive(dataset.model.theta_p)
+        ax.plot(np.where(valid, dataset.model_current.U_p, np.nan),
+                np.where(valid, dataset.model.theta_p, np.nan),
+                label=r'$\Theta_m$' + suffix, **colour)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     _style(ax, xlabel=_U_AXIS, ylabel=r'Theta, $\Theta$ (-)')
     return fig, ax
 
 
-def plot_fermi_dirac(relative_energy, *, thermal_energy):
+def plot_fermi_dirac(relative_energy, *, thermal_energy, temperature_models=None):
     """Occupied and empty probabilities versus E-E_F on linear axes."""
-    occupied, empty = fermi_dirac_probabilities(
-        relative_energy, thermal_energy=thermal_energy)
     fig, ax = plt.subplots(figsize=_FIGSIZE)
-    ax.plot(relative_energy, occupied, label=r'$f_{\mathrm{FD}}(E)$')
-    ax.plot(relative_energy, empty, label=r'$1-f_{\mathrm{FD}}(E)$')
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, temperature=None):
+        kt = thermal_energy if dataset.temperature is None else K_B * dataset.temperature / E_CHARGE
+        occupied, empty = fermi_dirac_probabilities(relative_energy, thermal_energy=kt)
+        ax.plot(relative_energy, occupied, label=r'$f_{\mathrm{FD}}(E)$' + suffix, **colour)
+        ax.plot(relative_energy, empty, label=r'$1-f_{\mathrm{FD}}(E)$' + suffix,
+                ls='--' if temperature_models is not None else '-', **colour)
     _style(ax, xlabel=r'Relative energy, $E-E_F$ (eV)',
            ylabel='Occupation probability (-)')
     return fig, ax
 
 
-def plot_model_occupations(model):
+def plot_model_occupations(model, *, temperature_models=None):
     """Free and trapped electrons and holes versus EF on one chart.
 
     Nonpositive/nonfinite values leave gaps on the logarithmic axis;
@@ -270,66 +323,63 @@ def plot_model_occupations(model):
     """
     fig, ax = plt.subplots(figsize=_FIGSIZE)
     ax.set_yscale('log')
-    for carrier, suffix, colour, style in (
-            ('p', 't', 'C0', '-'), ('n', 't', 'C1', '-'),
-            ('p', 'f', 'C0', '--'), ('n', 'f', 'C1', '--')):
-        values = getattr(model, f'{carrier}_{suffix}')
-        ax.plot(model.E_F, np.where(
-            np.isfinite(values) & (values > 0), values, np.nan),
-            color=colour, ls=style,
-            label=rf'${carrier}_{{{suffix}}}$ ($E_F$)')
+    for dataset, colour, temperature_label in _temperature_series(temperature_models, model=model):
+        for carrier, suffix, default_colour, style in (
+                ('p', 't', 'C0', '-'), ('n', 't', 'C1', '-.'),
+                ('p', 'f', 'C0', '--'), ('n', 'f', 'C1', ':')):
+            values = getattr(dataset.model, f'{carrier}_{suffix}')
+            ax.plot(dataset.model.E_F, np.where(
+                np.isfinite(values) & (values > 0), values, np.nan),
+                color=colour.get('color', default_colour),
+                ls=style if temperature_models is not None else ('-' if suffix == 't' else '--'),
+                label=rf'${carrier}_{{{suffix}}}$ ($E_F$)' + temperature_label)
     _style(ax, xlabel='', ylabel='')
     fig.tight_layout()
     return fig, ax
 
 
-def plot_trapped_charge(carriers, model):
-    """Compare trapped and free populations on two independent axis pairs.
-
-    Primary coordinates are (p_f, p_t), (p_f, p_f), and their model
-    counterparts, including model (p_f, n_t). The secondary pair is
-    (n_f, p_f), with a reversed linear horizontal axis and its own log Y.
-    The retained top label is Energy, E_F, although its data are n_f.
-    No energy conversion is applied. Nonpositive log values leave gaps.
-    Limits follow measured p_t and p_f only; the top axis follows model
-    rows within that measured free-charge window.
-    """
+def plot_trapped_charge(carriers, model, *, temperature_models=None):
+    """Measured/model charge pairs with a separate reversed free-electron axis."""
     fig, ax = plt.subplots(figsize=_FIGSIZE)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    for x, y, label, style in (
-            (carriers.p_f, carriers.p_t, r'$p_t$ (m$^{-3}$)', 'o'),
-            (carriers.p_f, carriers.p_f, r'$p_f$ (m$^{-3}$)', 'o'),
-            (model.p_f, model.p_t, r'$p_{tm}$', '-'),
-            (model.p_f, model.p_f, r'$p_{fm}$', '-'),
-            (model.p_f, model.n_t, r'$n_{tm}$', '-')):
-        valid = _finite_positive(x, y)
-        ax.plot(np.where(valid, x, np.nan), np.where(valid, y, np.nan),
-                style, ms=4, label=label)
-        if len(ax.lines) == 2:
-            # Capture measured bounds before adding the unbounded model curves.
-            measured_xlim, measured_ylim = ax.get_xlim(), ax.get_ylim()
-    ax.set_xlim(measured_xlim)
-    ax.set_ylim(measured_ylim)
-
+    for y, label in ((carriers.p_t, r'$p_t$ (m$^{-3}$)'),
+                     (carriers.p_f, r'$p_f$ (m$^{-3}$)')):
+        valid = _finite_positive(carriers.p_f, y)
+        ax.plot(np.where(valid, carriers.p_f, np.nan),
+                np.where(valid, y, np.nan), 'o', ms=4, label=label)
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
     secondary = fig.add_subplot(111, label='free_population_pair', frameon=False)
     secondary.set_yscale('log')
     secondary.xaxis.tick_top()
     secondary.xaxis.set_label_position('top')
     secondary.yaxis.set_visible(False)
     secondary.set_xlabel(r'Energy, $E_F$ (eV)')
-    valid = np.isfinite(model.n_f) & _finite_positive(model.p_f)
-    secondary.plot(np.where(valid, model.n_f, np.nan),
-                   np.where(valid, model.p_f, np.nan),
-                   color='C5', label=r'$p_{fm}$')
-    # Fit the secondary coordinates to the same free-charge window, while
-    # retaining the complete model line for clipping at the display bounds.
-    window = valid & (model.p_f >= measured_xlim[0]) & (model.p_f <= measured_xlim[1])
+    window_points = []
+    for dataset, colour, suffix in _temperature_series(temperature_models, model=model):
+        m = dataset.model
+        for y, label, style in ((m.p_t, r'$p_{tm}$', '-'),
+                                (m.p_f, r'$p_{fm}$', '--'),
+                                (m.n_t, r'$n_{tm}$', ':')):
+            valid = _finite_positive(m.p_f, y)
+            ax.plot(np.where(valid, m.p_f, np.nan), np.where(valid, y, np.nan),
+                    ls=style if temperature_models is not None else '-',
+                    label=label + suffix, **colour)
+        valid = np.isfinite(m.n_f) & _finite_positive(m.p_f)
+        secondary.plot(np.where(valid, m.n_f, np.nan),
+                       np.where(valid, m.p_f, np.nan),
+                       label=r'$p_{fm}$' + suffix,
+                       **(colour or dict(color='C5')))
+        window = valid & (m.p_f >= xlim[0]) & (m.p_f <= xlim[1])
+        window_points.append(np.column_stack((m.n_f[window], m.p_f[window])))
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     secondary.dataLim = Bbox.null()
-    if window.any():
-        secondary.update_datalim(np.column_stack((model.n_f[window], model.p_f[window])))
+    for points in window_points:
+        if points.size:
+            secondary.update_datalim(points)
     secondary.autoscale_view()
-    secondary.set_ylim(measured_ylim)
+    secondary.set_ylim(ylim)
     secondary.invert_xaxis()
     _style(ax, xlabel=r'Free charge, $n_f$ (m$^{-3}$)',
            ylabel=r'Trapped charge, $n_t$ (m$^{-3}$)')
@@ -338,8 +388,7 @@ def plot_trapped_charge(carriers, model):
     ax.legend(handles + extra_handles, labels + extra_labels, frameon=False)
     return fig, (ax, secondary)
 
-
-def plot_model_fermi_level(model, fermi):
+def plot_model_fermi_level(model, fermi, *, temperature_models=None):
     """M3 hole energy separation versus the M2 absolute free-hole density.
 
     Preserve the full signed energy range. Nonpositive/nonfinite densities
@@ -347,21 +396,23 @@ def plot_model_fermi_level(model, fermi):
     """
     if not np.array_equal(model.E_F, fermi.E_F):
         raise ValueError("Occupations and energy differences must share the E_F sweep.")
-    pf = np.asarray(model.p_f, dtype=float)
     fig, ax = plt.subplots(figsize=_FIGSIZE)
     ax.set_xscale('log')
-    ax.plot(np.where(_finite_positive(pf), pf, np.nan), fermi.delta_E_v,
-            label=r'$E_F-E_v$')
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model=model, model_levels=fermi):
+        pf = np.asarray(dataset.model.p_f, dtype=float)
+        ax.plot(np.where(_finite_positive(pf), pf, np.nan), dataset.model_levels.delta_E_v,
+                label=r'$E_F-E_v$' + suffix, **colour)
     ax.axhline(0, color='0.5', ls=':', label=r'$E_F=E_v$')
     _style(ax, xlabel=r'Free-hole concentration, $p_f$ (m$^{-3}$)',
            ylabel=r'Fermi level separation, $E_F-E_v$ (eV)')
     return fig, ax
 
 
-def plot_fermi_energy(measured, model_current, model_levels):
+def plot_fermi_energy(measured, model_current, model_levels, *, temperature_models=None):
     """Absolute measured/model Fermi energies versus hole-branch voltage.
 
-    Linear axes fit the measured points and equilibrium reference; the full
+    Linear axes fit the measured points; the equilibrium reference and full
     model curve remains available but does not widen the display limits.
     """
     if not np.array_equal(model_current.E_F, model_levels.E_F):
@@ -371,87 +422,84 @@ def plot_fermi_energy(measured, model_current, model_levels):
     ax.plot(np.where(valid, measured.U, np.nan),
             np.where(valid, measured.E_F, np.nan), 'o', ms=4,
             label=r'$E_F$')
-    ax.axhline(model_levels.E_F0, color='0.5', ls='--', label=r'$E_{F0}$')
     xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    valid = np.isfinite(model_current.U_p) & np.isfinite(model_levels.E_F)
-    ax.plot(np.where(valid, model_current.U_p, np.nan),
-            np.where(valid, model_levels.E_F, np.nan), label=r'$E_{Fm}$')
+    ax.axhline(model_levels.E_F0, color='0.5', ls='--', label=r'$E_{F0}$')
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model_current=model_current, model_levels=model_levels):
+        current, levels = dataset.model_current, dataset.model_levels
+        if not np.array_equal(current.E_F, levels.E_F):
+            raise ValueError('Model voltage and energy must share the E_F sweep.')
+        valid = np.isfinite(current.U_p) & np.isfinite(levels.E_F)
+        ax.plot(np.where(valid, current.U_p, np.nan),
+                np.where(valid, levels.E_F, np.nan), label=r'$E_{Fm}$' + suffix, **colour)
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     _style(ax, xlabel=_U_AXIS, ylabel=r'Energy, $E_F$ (eV)')
     return fig, ax
 
 
-def plot_density_energy(energy, dos, carriers, measured_levels, model, derivatives):
-    """DOS, density derivatives and carrier populations versus absolute energy.
-
-    Keep the declared series-to-Y-axis grouping; both Y axes are logarithmic.
-    The common linear energy window follows measured energies. Primary Y
-    bounds follow measured derivatives, secondary Y measured holes.
-    """
+def plot_density_energy(energy, dos, carriers, measured_levels, model, derivatives,
+                        *, temperature_models=None):
+    """DOS and carrier densities; comparison limits follow measured series only."""
     fig, ax = plt.subplots(figsize=(9, 5.5))
     right = ax.twinx()
     ax.set_yscale('log')
     right.set_yscale('log')
-    e_meas = measured_levels.E_F
-    series = [
-        (ax, energy, dos, r'$g(E)$', '-'),
-        (ax, e_meas, derivatives.measured, r'$dp/dE_F$', 'o'),
-        (right, model.E_F, model.n_t, r'$n_{tm}$', '-'),
-        (ax, model.E_F, derivatives.model, r'$dp_m/dE_F$', '-'),
-        (ax, model.E_F, model.p_t, r'$p_{tm}$', '-'),
-        (ax, model.E_F, model.p_f, r'$p_{fm}$', '-'),
-        (ax, model.E_F, model.n_f, r'$n_{fm}$', '-'),
-        (right, e_meas, carriers.p_t, r'$p_t$ (m$^{-3}$)', 'o'),
-        (right, e_meas, carriers.p_f, r'$p_f$ (m$^{-3}$)', 'o')]
-    handles = []
-    for i, (target, x, y, label, style) in enumerate(series):
+    def draw(target, x, y, label, style='-', **colour):
         x, y = np.asarray(x, float), np.asarray(y, float)
         if x.shape != y.shape:
             raise ValueError('Each energy series must match its density array.')
         valid = np.isfinite(x) & _finite_positive(y)
-        # Keep the positive DOS floor as a below-axis endpoint, so the band
-        # edges descend out of view instead of stopping at the last sample.
-        line, = target.plot(np.where(valid, x, np.nan),
-                            np.where(valid, y, np.nan), style,
-                            color=f'C{i}', ms=3, label=label)
-        handles.append(line)
+        target.plot(np.where(valid, x, np.nan), np.where(valid, y, np.nan),
+                    style, ms=3, label=label, **colour)
+    e_meas = measured_levels.E_F
+    draw(ax, e_meas, derivatives.measured, r'$dp/dE_F$', 'o', color='C1')
+    draw(right, e_meas, carriers.p_t, r'$p_t$ (m$^{-3}$)', 'o', color='C7')
+    draw(right, e_meas, carriers.p_f, r'$p_f$ (m$^{-3}$)', 'o', color='C8')
     finite = e_meas[np.isfinite(e_meas)]
     if not finite.size:
         raise ValueError('No finite measured energies to determine display limits.')
     span = np.ptp(finite)
     pad = .05 * (span if span > 0 else max(abs(finite[0]), 1.))
-    lo, hi = finite.min() - pad, finite.max() + pad
-    # Rebuild bounds only from relevant data, without shortening plotted arrays.
-    for target, indices in ((ax, (1,)), (right, (7, 8))):
-        target.dataLim = Bbox.null()
-        for i in indices:
-            x, y = handles[i].get_data()
-            valid = np.isfinite(x) & _finite_positive(y) & (x >= lo) & (x <= hi)
-            if valid.any():
-                target.update_datalim(np.column_stack((x[valid], y[valid])))
-        target.autoscale_view(scalex=False, scaley=True)
+    xlim = finite.min() - pad, finite.max() + pad
+    ylim, right_ylim = ax.get_ylim(), right.get_ylim()
+    draw(ax, energy, dos, r'$g(E)$', color='C0')
+    for dataset, colour, suffix in _temperature_series(
+            temperature_models, model=model, density_derivative=derivatives.model):
+        m = dataset.model
+        for target, y, label, style, default_colour in (
+                (right, m.n_t, r'$n_{tm}$', '-', 'C2'),
+                (ax, dataset.density_derivative, r'$dp_m/dE_F$', '-', 'C3'),
+                (ax, m.p_t, r'$p_{tm}$', '--', 'C4'),
+                (ax, m.p_f, r'$p_{fm}$', ':', 'C5'),
+                (ax, m.n_f, r'$n_{fm}$', '-.', 'C6')):
+            draw(target, m.E_F, y, label + suffix,
+                 style if temperature_models is not None else '-',
+                 **(colour or dict(color=default_colour)))
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    right.set_ylim(right_ylim)
+    for target in (ax, right):
         target.yaxis.set_major_formatter(LogFormatterSciNotation())
-    ax.set_xlim(lo, hi)
     ax.set_xlabel(r'Energy, $E$, $\Delta E_F$ (eV)')
     ax.set_ylabel(r'$g(E),\ dn/dE_F$ (m$^{-3}$eV$^{-1}$)')
     right.set_ylabel(r'$n_f,\ n_t$ (m$^{-3}$)')
     ax.grid(True, which='major', alpha=.3)
-    ax.legend(handles=handles, frameon=False, loc='upper left',
-              bbox_to_anchor=(1.16, 1.))
+    handles = list(ax.lines) + list(right.lines)
+    ax.legend(handles=handles, frameon=False, loc='upper left', bbox_to_anchor=(1.16, 1.))
     fig.tight_layout()
     return fig, (ax, right)
 
 
 def plot_model_current(model, *, measured=None, material=None, mu_0=None,
-                       equilibrium_holes=None):
+                       equilibrium_holes=None, temperature_models=None):
     """Hole current and negated electron current versus the hole voltage.
 
     Optional Ohmic and Mott–Gurney references use the supplied material,
-    microscopic mobility and equilibrium free-hole density, carrying the
-    workbook amplitudes ``_OHMIC_FACTOR`` and ``_MOTT_GURNEY_FACTOR`` so the
-    two slope references bracket the M4 curve as they do in MODEL. Invalid log
-    points leave gaps. Comparison limits are set from measurements only.
+    microscopic mobility and equilibrium free-hole density. The dimensionless
+    visualisation factors ``_OHMIC_FACTOR`` and ``_MOTT_GURNEY_FACTOR`` shift
+    their amplitudes while preserving logarithmic slopes of 1 and 2. Invalid
+    log points leave gaps. Comparison limits are set from measurements only.
     """
     references = (material, mu_0, equilibrium_holes)
     if any(value is not None for value in references) and any(
@@ -464,19 +512,26 @@ def plot_model_current(model, *, measured=None, material=None, mu_0=None,
         ok = _finite_positive(measured.V, measured.J)
         ax.plot(measured.V[ok], measured.J[ok], "o", ms=4, label=r'$j$ (A/m$^2$)')
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    for u, j, label in ((model.U_p, model.J_p, r'$j_m\ (p_f)$'),
-                        (model.U_p, -np.asarray(model.J_n), r'$-j_m\ (n_f)$')):
-        ok = _finite_positive(u, j)
-        ax.plot(np.where(ok, u, np.nan), np.where(ok, j, np.nan), label=label)
+    for dataset, colour, suffix in _temperature_series(temperature_models, model_current=model):
+        current = dataset.model_current
+        for u, j, label, style in ((current.U_p, current.J_p, r'$j_m\ (p_f)$', '-'),
+                                  (current.U_p, -np.asarray(current.J_n), r'$-j_m\ (n_f)$', '--')):
+            ok = _finite_positive(u, j)
+            ax.plot(np.where(ok, u, np.nan), np.where(ok, j, np.nan),
+                    ls=style if temperature_models is not None else '-',
+                    label=label + suffix, **colour)
     if measured is None:
         xlim = ax.get_xlim()
     if material is not None:
         u = np.asarray(xlim)
-        ohmic = (E_CHARGE * mu_0 * equilibrium_holes * u / material['L']
-                 * _OHMIC_FACTOR)
+        for dataset, colour, suffix in _temperature_series(
+                temperature_models, model=SimpleNamespace(p_f0=equilibrium_holes)):
+            ohmic = (E_CHARGE * mu_0 * dataset.model.p_f0 * u / material['L']
+                     * _OHMIC_FACTOR)
+            ax.plot(u, ohmic, '--', label=r'$m=1$' + suffix,
+                    **(colour or dict(color='0.45')))
         mott_gurney = (9 / 8 * EPSILON_0 * material['eps_r'] * mu_0
                        * u**2 / material['L']**3 / _MOTT_GURNEY_FACTOR)
-        ax.plot(u, ohmic, '--', color='0.45', label=r'$m=1$')
         ax.plot(u, mott_gurney, ':', color='0.45', label=r'$m=2$')
     if measured is not None:
         ax.set_xlim(xlim)
@@ -485,7 +540,7 @@ def plot_model_current(model, *, measured=None, material=None, mu_0=None,
     return fig, ax
 
 
-def plot_model_transport_energy(model):
+def plot_model_transport_energy(model, *, temperature_models=None):
     """Voltage (left) and current density (right) versus absolute E_F.
 
     Both vertical axes are logarithmic with independent automatic limits.
@@ -500,14 +555,17 @@ def plot_model_transport_energy(model):
     for ax in (voltage, current):
         ax.set_yscale('log')
         ax.yaxis.set_major_formatter(LogFormatterSciNotation())
-    for ax, values, label, colour, style in (
-            (voltage, model.U_n, r'$U\ (n_t)$', 'C0', '-'),
-            (voltage, model.U_p, r'$U\ (p_t)$', 'C1', '-'),
-            (current, model.J_n, r'$j\ (n_f)$', 'C0', '--'),
-            (current, model.J_p, r'$j\ (p_f)$', 'C1', '--')):
-        valid = np.isfinite(model.E_F) & _finite_positive(values)
-        ax.plot(model.E_F, np.where(valid, values, np.nan),
-                label=label, color=colour, ls=style)
+    for dataset, colour, suffix in _temperature_series(temperature_models, model_current=model):
+        m = dataset.model_current
+        for ax, values, label, default_colour, style in (
+                (voltage, m.U_n, r'$U\ (n_t)$', 'C0', '-'),
+                (voltage, m.U_p, r'$U\ (p_t)$', 'C1', '-.'),
+                (current, m.J_n, r'$j\ (n_f)$', 'C0', '--'),
+                (current, m.J_p, r'$j\ (p_f)$', 'C1', ':')):
+            valid = np.isfinite(m.E_F) & _finite_positive(values)
+            ax.plot(m.E_F, np.where(valid, values, np.nan),
+                    label=label + suffix, color=colour.get('color', default_colour),
+                    ls=style if temperature_models is not None else ('-' if ax is voltage else '--'))
     voltage.grid(True, which='major', alpha=0.3)
     lines = voltage.lines + current.lines
     voltage.legend(lines, [line.get_label() for line in lines], frameon=False)
@@ -515,7 +573,7 @@ def plot_model_transport_energy(model):
     return fig, (voltage, current)
 
 
-def plot_hole_current_semilog(model, *, measured):
+def plot_hole_current_semilog(model, *, measured, temperature_models=None):
     """Measured and model hole current with linear U and logarithmic j.
 
     Preserve signed voltages; nonpositive currents cannot be displayed.
@@ -526,10 +584,14 @@ def plot_hole_current_semilog(model, *, measured):
     v, j = np.asarray(measured.V, float), np.asarray(measured.J, float)
     ok = np.isfinite(v) & _finite_positive(j)
     ax.plot(v[ok], j[ok], "o", ms=4, label=r"$j$ (A/m$^2$)")
-    u, j = np.asarray(model.U_p, float), np.asarray(model.J_p, float)
-    ok = np.isfinite(u) & _finite_positive(j)
-    ax.plot(np.where(ok, u, np.nan), np.where(ok, j, np.nan),
-            label=r"$j_m\ (p_f)$")
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    for dataset, colour, suffix in _temperature_series(temperature_models, model_current=model):
+        u, j = np.asarray(dataset.model_current.U_p, float), np.asarray(dataset.model_current.J_p, float)
+        ok = np.isfinite(u) & _finite_positive(j)
+        ax.plot(np.where(ok, u, np.nan), np.where(ok, j, np.nan),
+                label=r"$j_m\ (p_f)$" + suffix, **colour)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     _style(ax, xlabel=_U_AXIS, ylabel=_J_AXIS)
     return fig, ax
 

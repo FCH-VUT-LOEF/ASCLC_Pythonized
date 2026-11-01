@@ -7,6 +7,10 @@
   measured limits before adding model curves, then preserve those limits.
 - Explicit user-specified display bounds take precedence over automatic
   measured-data limits. Preserve each chart's linear/log axis scales.
+- User clarification, 2026-11-01: X and Y display limits may differ across
+  notebooks. Each notebook may set its own chart bounds; do not synchronize
+  display limits across notebooks. The measured-data rule still applies
+  where no explicit display bounds are specified.
 - Apply this rule to all comparison charts, not just individual charts named
   in earlier discussions. For charts without measured data, use automatic
   limits unless the user specifies bounds.
@@ -33,6 +37,15 @@
   unless separately asked.
 
 ## Parameters are user-controlled and must remain unchanged
+
+- User decision, 2026-11-01: use the source experimental carrier convention:
+  the labelled trapped density is the Poisson-derived expression, total
+  density is free plus labelled trapped, and theta is the mobility ratio
+  (free divided by labelled trapped). The total-space-charge interpretation
+  and subtraction proposal are deferred; see
+  [docs/carrier_density_convention.md](docs/carrier_density_convention.md).
+  This decision does not authorize changing parameters, smoothing, grids,
+  or model occupation definitions.
 
 - Never change sample, material, device, model, fitting, or numerical parameters.
   This includes notebook settings, parameter files, defaults, and derived

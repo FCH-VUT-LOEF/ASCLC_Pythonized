@@ -1,5 +1,12 @@
 # Charge density versus voltage, linear/log
 
+Update, 2026-11-01: the user selected the
+[source experimental density convention](carrier_density_convention.md).
+Current carriers.p_t is the Poisson expression without subtraction;
+carriers.p_s=p_f+p_t. The earlier physical-decomposition description below
+records the prior behavior and is superseded for the experimental curves.
+Model density definitions and display bounds are unchanged.
+
 Implemented on 2026-09-15 as the next chart after the accepted linear/log
 hole-current chart. The notebook calls `plot_carrier_densities` with model
 occupations and current outputs and registers the comparison under

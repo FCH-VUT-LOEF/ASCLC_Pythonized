@@ -1,5 +1,12 @@
 # Theta versus voltage
 
+Update, 2026-11-01: the active measured ratio is p_f/p_t, with p_t equal
+to the Poisson expression. It remains mu_eff/mu0, and equality of labelled
+free/trapped populations now corresponds to theta=1. It is not a bounded
+free fraction. See [the active convention and deferred proposal](carrier_density_convention.md).
+The measured-only diagnostic marker was updated; the model ratio remains
+abs(p_f/p_s) with its existing equilibrium-subtracted denominator.
+
 Implemented measured/model comparison using existing arrays and parameters.
 Source chart9.xml pairs MODEL!Z/AN for the model and E/Q for measurements.
 Z references j(U)!C (hole voltage); AN references n(E)!N, abs(pf/ps).
@@ -14,8 +21,12 @@ the measured ratio to the current carrier calculation. Values above one
 are retained, not numerically capped.
 
 The notebook adds the combined chart after model voltage is available;
-it replaces the carrier_fraction export entry. The earlier measured-only
-diagnostic remains available. The combined chart has two series and no
+it registers the carrier_fraction export entry. Update, 2026-11-01:
+all four notebooks now show a single combined theta chart after model voltage
+is available. The earlier measured-only chart was removed; its peak and
+equal-density diagnostic readouts and explanatory text were moved to the
+combined chart. Existing model arrays, parameters, grids, and each notebook's
+combined-chart display bounds are unchanged. The combined chart has two series and no
 extra diagnostic reference lines. Labels distinguish Theta and Theta_m;
 the source model series was unnamed. X is linear, Y logarithmic, and
 display bounds fit the measured points. Full model arrays remain present

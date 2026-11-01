@@ -1,5 +1,10 @@
 # A-SCLC: current density, mobility, carrier densities, Fermi level shift
 
+User decision, 2026-11-01: the experimental default follows the source
+carrier convention, `theta_model="mobility_ratio"`: p_t is equation (6),
+p_s=p_f+p_t, and theta=p_f/p_t. The physical total-charge alternative is
+deferred. See [the decision and future suggestion](carrier_density_convention.md).
+
 Model step M4 is available through `run_model_current` and `plot_model_current`.
 It retains gamma = T_t/T and the established M2 density mapping; see
 [M4 derivation and limitations](M4_model_current.md).
@@ -314,19 +319,17 @@ plots, `MODEL!Q = I/B21`, is `mu_eff/mu_0`.
 
 | `theta_model` | `p_t` | `p_s` | `Theta` |
 | --- | --- | --- | --- |
-| `free_over_total` (default) | Eq. (6) − `p_f` | Eq. (6) | `p_f/p_s` = `mu_eff/mu_0` |
+| `free_over_total` | Eq. (6) − `p_f` | Eq. (6) | `p_f/p_s` = `mu_eff/mu_0` |
 | `absolute_over_total` | Eq. (6) | `abs(p_f) + abs(p_t)` | `abs(p_f)/p_s` (SI, Eq. (S12)) |
-| `mobility_ratio` | Eq. (6) | `p_f + p_t` | `mu_eff/mu_0` = `p_f/p_t` (workbook `MODEL!Q`) |
+| `mobility_ratio` (default) | Eq. (6) | `p_f + p_t` | `mu_eff/mu_0` = `p_f/p_t` (workbook `MODEL!Q`) |
 
-The default reading makes equations (2), (4), (5), (6) and (S12) one system with
-a single `Theta`: 1 in the ohmic and Mott–Gurney regions, 1/2 where
-`p_t = p_f` — and there, by equation (4), `mu_eff = mu_0/2`, which is the test of
-`mu_0` the article proposes. `absolute_over_total` is the SI read literally, its
-absolute values keeping the sign-flipping noise floor finite;
-`mobility_ratio` reproduces the workbook column. The three differ only in
-`p_t` and `Theta`, and only materially once `Theta` is not small: on the
-MAPbBr3 S2 dark scan the largest `p_t` moves by 18 % between the default and the
-other two.
+The selected default reproduces the workbook's density decomposition and
+mobility ratio, retaining an unbounded theta. Equal labelled populations
+give theta=1. `free_over_total` is the deferred physical interpretation;
+it gives equality at theta=1/2. `absolute_over_total` uses absolute populations
+in the sum and a bounded fraction. These are distinct definitions, not
+equivalent ways to evaluate one physical quantity. Sample statistics below
+were recorded with the previous default and are historical.
 
 ### Conventions and what is left unclipped
 
@@ -341,8 +344,8 @@ where equation (6) leaves no space charge at all.
 
 Two signals are deliberately left in the output rather than clipped: `1 < gamma <
 2` makes equation (6) negative, the same report equation (4) makes with a
-negative mobility, and `Theta > 1` (so a negative `p_t` under the default
-reading) means the row needs more mobility than the `mu_0` supplied. Since `mu_0`
+negative mobility, and `Theta > 1` means the inferred mobility exceeds
+`mu_0`. It does not force the default labelled `p_t` negative. Since `mu_0`
 is hand-selected, that is how it gets judged.
 
 ### The MAPbBr3 S2 dark scan

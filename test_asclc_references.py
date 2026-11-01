@@ -1,4 +1,4 @@
-"""MODEL!K and MODEL!N reference amplitudes on the log/log current chart."""
+"""Scaled Ohmic and Mott-Gurney references on the log/log current chart."""
 import unittest
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from asclc_workflow import (ModelCurrent, run_calculation,
 ROOT = Path(__file__).resolve().parent
 MATERIAL = dict(L=6.00e-4, eps_r=25.50)
 MU_0 = 2.7e-3
-P_F0 = 1399565233278.4204   # MODEL!J2, the workbook's own nf0
+P_F0 = 1399565233278.4204   # Equilibrium free-hole density, m^-3
 
 
 def reference_lines(axes):
@@ -24,7 +24,7 @@ def reference_lines(axes):
     return ({name: lines[name].get_xydata().T for name in ('$m=1$', '$m=2$')})
 
 
-class WorkbookReferenceAmplitudes(unittest.TestCase):
+class SlopeReferenceAmplitudes(unittest.TestCase):
     def setUp(self):
         ef = np.linspace(-4.84, -5.30, 64)
         one = np.ones_like(ef)
@@ -35,10 +35,10 @@ class WorkbookReferenceAmplitudes(unittest.TestCase):
         return plot_model_current(self.model, material=MATERIAL, mu_0=MU_0,
                                   equilibrium_holes=P_F0)
 
-    def test_reference_endpoints_match_the_workbook_cells(self):
-        # MODEL!K and MODEL!N evaluated at MODEL!I2 = 1e-3 V and I3 = 100 V.
-        # Both already carry L3 = 2 and O3 = 0.4; the constants differ from
-        # the workbook's rounded e and eps_0 by under 2e-4 relative.
+    def test_reference_endpoints_match_expected_amplitudes(self):
+        # Scaled reference values at U = 1e-3 V and 100 V, including the
+        # visualisation factors 2 and 0.4. Allow under 2e-4 relative difference
+        # for rounding of the physical constants in the expected values.
         figure, axes = self.figure()
         try:
             lines = reference_lines(axes)
@@ -75,7 +75,7 @@ class WorkbookReferenceAmplitudes(unittest.TestCase):
     def test_the_m4_curve_stays_between_both_references(self):
         # J/J_MG = (8/9)(1-g)(2-g)**2 * theta and J/J_ohmic = (2-g) * pf/pf0.
         # Neither ratio is bounded by the bare equations at gamma = T_t/T; the
-        # workbook factors are what place the hole branch inside the band over
+        # visualisation factors place the hole branch inside the band over
         # the plotted range. Uses the notebook's parameters and sweep.
         material = dict(L=6.00e-4, S=7.70e-6, eps_r=25.50, E_c=-3.36,
                         E_v=-5.58, m_eff_p=0.305, m_eff_e=0.320)

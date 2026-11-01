@@ -211,7 +211,7 @@ def model_current_density(charge_density, free_density, *, gamma, thickness,
 
 
 def carrier_densities(voltage, current_density, gamma, *, thickness, eps_r, mu_0,
-                      theta_model="free_over_total"):
+                      theta_model="mobility_ratio"):
     """Free and trapped carrier concentrations, Eqs. (5) and (6) (guide step A4).
 
         p_f = L j / (e mu_0 (2 - g) U)                              Eq. (5)
@@ -236,9 +236,12 @@ def carrier_densities(voltage, current_density, gamma, *, thickness, eps_r, mu_0
     ``mu_eff = mu_0``) would give ``Theta = 1/2`` rather than the ``Theta = 1``
     the article states for that region.
 
+    The default reports ``p_t = p_6``, ``p_s = p_f + p_t`` and
+    ``Theta = p_f / p_t = mu_eff / mu_0``. This ratio is not a bounded free
+    fraction. The total-charge decomposition above is an explicit alternative.
     ``theta_model`` selects the reading; all three return the same ``p_f``:
 
-    - ``"free_over_total"`` (default): Eq. (6) is ``p_s``, ``p_t = p_s - p_f``,
+    - ``"free_over_total"``: Eq. (6) is ``p_s``, ``p_t = p_s - p_f``,
       ``Theta = p_f / p_s``. Eqs. (2), (4), (5), (6) and (S12) are then one
       system with a single ``Theta``, identically equal to ``mu_eff / mu_0``,
       equal to 1 in the Mott-Gurney limit and to 1/2 where ``p_t = p_f`` -- the
@@ -247,7 +250,7 @@ def carrier_densities(voltage, current_density, gamma, *, thickness, eps_r, mu_0
       ``p_s = |p_f| + |p_t|``, ``Theta = |p_f| / p_s`` (Eq. (S12)). Absolute
       values keep the noise-floor rows, where the measured current changes sign
       inside a window, finite.
-    - ``"mobility_ratio"``: ``p_t`` is Eq. (6),
+    - ``"mobility_ratio"`` (default): ``p_t`` is Eq. (6),
       ``p_s = p_f + p_t``, ``Theta = mu_eff / mu_0``, which equals ``p_f / p_t``
       identically and so needs no mobility argument.
 
@@ -257,9 +260,10 @@ def carrier_densities(voltage, current_density, gamma, *, thickness, eps_r, mu_0
     concentrations. The sign that survives is the shape factor's: ``1 < g < 2``
     makes Eq. (6) negative, as it makes Eq. (4)'s mobility negative, and that is
     the equation reporting a point outside the transport regime it describes.
-    ``Theta > 1`` (hence a negative ``p_t`` under the default reading) means the
-    row needs more mobility than the ``mu_0`` supplied; it is left in the output
-    rather than clipped, because that is how ``mu_0`` gets judged.
+    ``Theta > 1`` means the inferred mobility exceeds ``mu_0``. It does not
+    make the default labelled trapped density negative. Under the explicit
+    ``free_over_total`` alternative it can make ``p_t`` negative. All values
+    remain in the output without clipping.
 
     A row is analysed or it is not: all four outputs are ``nan`` wherever
     ``voltage``, ``current_density`` or ``gamma`` is nonfinite -- including the

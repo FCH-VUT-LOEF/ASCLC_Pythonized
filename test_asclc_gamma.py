@@ -1,12 +1,26 @@
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
 from asclc_backend import local_gamma
+from asclc_workflow import run_effective_mobility
 
 
 class LocalGammaChecks(unittest.TestCase):
+    def test_voltage_addition_does_not_change_raw_power_law_slope(self):
+        """A quadratic raw scan retains gamma=1/2 after a voltage addition."""
+        v = np.geomspace(0.01, 10, 40)
+        offset = 0.01
+        result = SimpleNamespace(V=v + offset, J=3.7 * v ** 2,
+                                 measurements=SimpleNamespace(U=v))
+        mobility = run_effective_mobility(
+            result, material=dict(L=6e-4, eps_r=25.5), window=5)
+        np.testing.assert_allclose(mobility.gamma[:-4], 0.5, rtol=1e-9)
+        self.assertTrue(np.isnan(mobility.gamma[-4:]).all())
+        self.assertAlmostEqual(mobility.U[0], v[:5].mean() + offset)
+
     def test_power_law_gamma_is_one_over_exponent(self):
         # j = c * V**k  =>  ln V = (ln j - ln c) / k  =>  gamma = d lnV/d lnj = 1/k.
         v = np.geomspace(0.01, 10, 40)

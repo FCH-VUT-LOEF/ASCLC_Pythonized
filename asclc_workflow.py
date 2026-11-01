@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from asclc_backend import (Measurements, load_measurements, current_density,
+from asclc_backend import (Measurements, ModelOccupations, load_measurements, current_density,
                            trailing_mean, local_gamma, effective_mobility,
                            carrier_densities, model_occupations, model_current_density,
                            valence_band_dos, conduction_band_dos, total_dos,
@@ -45,13 +45,15 @@ class Mobility:
 def run_effective_mobility(result, *, material, window):
     """Steps A2 and A3 on a common trailing window of raw measurements.
 
-    U and j are trailing means; gamma fits ln|U| on ln|j| using raw
-    readings over the same window. Equation (4) gives mu_eff from these
+    U and j are trailing means; U includes the configured voltage addition.
+    Gamma fits ln|U_raw| on ln|j| before that addition, over the same window.
+    Equation (4) gives mu_eff from these
     quantities, thickness and permittivity. Incomplete windows return nan;
     material is not mutated and row order and length are preserved."""
     u = trailing_mean(result.V, window=window)
     j = trailing_mean(result.J, window=window)
-    gamma = local_gamma(result.V, result.J, window=window, centered=False)
+    gamma = local_gamma(result.measurements.U, result.J,
+                        window=window, centered=False)
     mu_eff = effective_mobility(u, j, gamma, thickness=material['L'],
                                 eps_r=material['eps_r'])
     return Mobility(u, j, gamma, mu_eff, int(window))
@@ -72,14 +74,15 @@ class Carriers:
 
 
 def run_carrier_densities(mobility, *, material, mu_0,
-                          theta_model="free_over_total"):
+                          theta_model="mobility_ratio"):
     """Guide step A4: equations (5) and (6) on the rows of step A3.
 
     ``mobility`` is the ``Mobility`` returned by ``run_effective_mobility``, so
     each row keeps the same trailing window, voltage and slope the mobility was
     built from: ``p_f[i]``, ``p_t[i]`` and ``theta[i]`` describe ``U[i]``,
-    ``j[i]`` and ``gamma[i]``, and ``theta`` equals ``mu_eff[i] / mu_0`` under
-    the default reading of equation (6).
+    ``j[i]`` and ``gamma[i]``. By default the labelled trapped population is
+    equation (6), the total is free plus trapped, and ``theta = p_f / p_t``
+    equals ``mu_eff[i] / mu_0``. Theta is not a bounded free fraction.
 
     ``mu_0`` is the microscopic mobility read off the step-A3 plot (m^2 V^-1
     s^-1); it scales ``p_f`` and leaves equation (6) untouched. ``theta_model``
@@ -234,6 +237,58 @@ def run_model_mobility(model, *, mu_0):
     if qn.shape != ef.shape or qp.shape != ef.shape:
         raise ValueError("Carrier fractions must match the E_F sweep.")
     return ModelMobility(ef.copy(), mu_0 * qn, mu_0 * qp, float(mu_0))
+
+
+def temperature_range(*, start, stop, step):
+    """Positive temperatures in K, including stop only if reached by a step.
+
+    Ascending and descending ranges are supported; step must point at stop.
+    """
+    if not np.isfinite([start, stop, step]).all() or min(start, stop) <= 0:
+        raise ValueError('Temperature bounds must be finite and positive (K).')
+    if step == 0 or (stop - start) * step < 0:
+        raise ValueError('Temperature step must be nonzero and point toward stop.')
+    intervals = (stop - start) / step
+    nearest = round(intervals)
+    if np.isclose(intervals, nearest, rtol=0, atol=1e-10):
+        intervals = nearest
+    values = start + step * np.arange(int(np.floor(intervals)) + 1)
+    if intervals == nearest:
+        values[-1] = stop
+    return values
+
+
+@dataclass
+class TemperatureModel:
+    """One temperature's model quantities on the supplied, unchanged grids."""
+
+    temperature: float
+    model: ModelOccupations
+    model_current: ModelCurrent
+    model_levels: ModelFermiLevel
+    model_mobility: ModelMobility
+    density_derivative: np.ndarray
+
+
+def run_temperature_models(energy, E_F, *, material, params, start, stop, step):
+    """Evaluate the existing equations at each selected temperature (K).
+
+    Temperature changes k_B*T in the occupations and gamma=T_t/T in the
+    current mapping. All other inputs, including T_t and both grids, stay fixed.
+    Measured quantities are not recalculated.
+    """
+    results = []
+    for temperature in temperature_range(start=start, stop=stop, step=step):
+        model = run_model_occupations(
+            energy, E_F, material=material, params=params, temperature=temperature)
+        results.append(TemperatureModel(
+            float(temperature), model,
+            run_model_current(model, material=material, mu_0=params['mu_0'],
+                              gamma=params['T_t'] / temperature),
+            run_model_fermi_level(model, material=material),
+            run_model_mobility(model, mu_0=params['mu_0']),
+            density_energy_derivative(model.E_F, model.p_s, model=True)))
+    return results
 
 
 def export_results(result, figures, directory):

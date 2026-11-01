@@ -41,16 +41,16 @@ class CarrierDensityChecks(unittest.TestCase):
         # Hand-checked magnitude, m^-3: eps_0 eps_r (0.5)(1.5)(0.5) / (e L^2).
         self.assertAlmostEqual(p_t[0] / 1.4685e15, 1.0, places=3)
 
-    def test_mott_gurney_limit_has_no_trapped_charge(self):
-        """Exact Eq. (3) data at mu_0: p_f = p_s, p_t = 0, Theta = 1."""
+    def test_mott_gurney_limit_of_default_density_ratio(self):
+        """Exact Eq. (3): labelled p_t = p_f, p_s = 2 p_f, Theta = 1."""
         v = np.geomspace(0.01, 100, 40)
         p_f, p_t, p_s, theta = carrier_densities(
             v, mott_gurney(v), np.full(v.shape, 0.5),
             thickness=L, eps_r=EPS_R, mu_0=MU_0)
         expected = 0.75 * EPSILON_0 * EPS_R * v / (E_CHARGE * L ** 2)
         np.testing.assert_allclose(p_f, expected, rtol=1e-12)
-        np.testing.assert_allclose(p_s, expected, rtol=1e-12)
-        np.testing.assert_allclose(p_t, 0.0, atol=1e-4 * expected[0])
+        np.testing.assert_allclose(p_t, expected, rtol=1e-12)
+        np.testing.assert_allclose(p_s, 2 * expected, rtol=1e-12)
         np.testing.assert_allclose(theta, 1.0, rtol=1e-12)
 
     def test_theta_is_the_mobility_ratio_of_equation_4(self):
@@ -60,10 +60,11 @@ class CarrierDensityChecks(unittest.TestCase):
         j = mott_gurney(v) * rng.lognormal(0.0, 0.4, v.size)
         g = rng.uniform(-0.2, 0.9, v.size)
         mu_eff = effective_mobility(v, j, g, thickness=L, eps_r=EPS_R)
-        p_f, _, p_s, theta = carrier_densities(
+        p_f, p_t, p_s, theta = carrier_densities(
             v, j, g, thickness=L, eps_r=EPS_R, mu_0=MU_0)
         np.testing.assert_allclose(theta, mu_eff / MU_0, rtol=1e-12)
-        np.testing.assert_allclose(theta, p_f / p_s, rtol=1e-12)
+        np.testing.assert_allclose(theta, p_f / p_t, rtol=1e-12)
+        np.testing.assert_allclose(p_s, p_f + p_t, rtol=1e-12)
 
     def test_equal_densities_mean_half_the_microscopic_mobility(self):
         """The article's test of mu_0: p_t = p_f at mu_eff = mu_0 / 2."""
@@ -72,7 +73,8 @@ class CarrierDensityChecks(unittest.TestCase):
         g = np.full(v.shape, 0.5)
         mu_eff = effective_mobility(v, j, g, thickness=L, eps_r=EPS_R)
         p_f, p_t, _, theta = carrier_densities(
-            v, j, g, thickness=L, eps_r=EPS_R, mu_0=MU_0)
+            v, j, g, thickness=L, eps_r=EPS_R, mu_0=MU_0,
+            theta_model="free_over_total")
         np.testing.assert_allclose(mu_eff, MU_0 / 2, rtol=1e-12)
         np.testing.assert_allclose(p_t, p_f, rtol=1e-12)
         np.testing.assert_allclose(theta, 0.5, rtol=1e-12)
@@ -178,8 +180,8 @@ class CarrierDensityChecks(unittest.TestCase):
 
 
 class EqualDensityChecks(unittest.TestCase):
-    def test_crossing_is_where_mu_eff_is_half_mu_0(self):
-        """A scan through the crossing: Theta = 1/2 at the returned voltage."""
+    def test_crossing_is_where_mu_eff_equals_mu_0(self):
+        """A scan through the default crossing: Theta = 1."""
         v = np.geomspace(0.1, 10.0, 200)
         g = np.full(v.shape, 0.5)
         # j rising as V^3 crosses the Mott-Gurney V^2 shape at a known voltage.
@@ -188,8 +190,8 @@ class EqualDensityChecks(unittest.TestCase):
             v, j, g, thickness=L, eps_r=EPS_R, mu_0=MU_0)
         crossing = equal_density_voltage(v, p_f, p_t)
         self.assertEqual(crossing.size, 1)
-        self.assertAlmostEqual(crossing[0] / 4.0, 1.0, places=3)
-        np.testing.assert_allclose(np.interp(4.0, v, theta), 0.5, rtol=1e-3)
+        self.assertAlmostEqual(crossing[0] / 8.0, 1.0, places=3)
+        np.testing.assert_allclose(np.interp(8.0, v, theta), 1.0, rtol=1e-3)
 
     def test_no_crossing_and_exact_rows(self):
         v = np.array([1.0, 2.0, 3.0])

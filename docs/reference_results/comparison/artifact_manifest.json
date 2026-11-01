@@ -1,0 +1,82 @@
+{
+  "README.md": {
+    "sha256": "44f39068fa3833015b6d9846e511336135393df30804f8d68fe2a112f7c79434",
+    "bytes": 4872
+  },
+  "summary.csv": {
+    "sha256": "4f4397cd25e375b73b734749b2ef90243b4af975934f821deca4158fe83543ef",
+    "bytes": 24426
+  },
+  "error_sources.md": {
+    "sha256": "aaea5de9b58dc2b11c5a48e939a1486adb75d7f7c9a8fdb0edf4d8c8cfc0921a",
+    "bytes": 8415
+  },
+  "details.json": {
+    "sha256": "dd2e9932244d0ccd24fe2544621b3e8f0bdd43bfe11298f4b8c07023d925f01e",
+    "bytes": 10723
+  },
+  "SCLCKopecky/equilibrium.csv": {
+    "sha256": "8a35fff4379d5d76da9171e6260ff21709defc1070bff76b52931f1dd7a38680",
+    "bytes": 439
+  },
+  "SCLCKopecky/dos.csv": {
+    "sha256": "ffe1832f39f69765c553e517491486ec007a77837d3ef39107a7d308fd93187d",
+    "bytes": 2133155
+  },
+  "SCLCKopecky/README.md": {
+    "sha256": "6a38949fff15a2383cc8b31db9e8f4e9beb43e51c8abbc08a6e58e140283bbe0",
+    "bytes": 8662
+  },
+  "SCLCKopecky/model.csv": {
+    "sha256": "ff66491f9ae2fddcc339ff790b256aa06d2c4d896592fb24959720de84324a24",
+    "bytes": 6071868
+  },
+  "SCLCKopecky/measured.csv": {
+    "sha256": "ae3869b394830367f8c4766efecd7240543ecde69926536cb4b7f0ddd3ecacd0",
+    "bytes": 333422
+  },
+  "01b_MABI_SnO2_3_1/equilibrium.csv": {
+    "sha256": "89c30eff4e1b008f2f50386b1f0d58dc91205a2285fe817e4fdd7f29ff243234",
+    "bytes": 457
+  },
+  "01b_MABI_SnO2_3_1/dos.csv": {
+    "sha256": "6950caea873dc637b5f2444fae11f74b60afbb64f7b2a3bc592f2061ffc72312",
+    "bytes": 2042945
+  },
+  "01b_MABI_SnO2_3_1/README.md": {
+    "sha256": "4ed8227bd7f47fcfe8bc91e29581afd19d9b7c24d1e6398087d79defd0455073",
+    "bytes": 8630
+  },
+  "01b_MABI_SnO2_3_1/model.csv": {
+    "sha256": "78fd31ddbc85a6a392465bed2b68b006fbbe5b0a8feb54aaeb75df000bf4ad57",
+    "bytes": 6065502
+  },
+  "01b_MABI_SnO2_3_1/model_error_components.csv": {
+    "sha256": "43f0d9b23bdfcd032d53560bfe02698cc744ee677ceb40ecceaa8ea6a1791c31",
+    "bytes": 7272
+  },
+  "01b_MABI_SnO2_3_1/measured.csv": {
+    "sha256": "4c5cedd8a007d355a69633c789145fbf5035d978d2b9ef763e410ca8c8471de7",
+    "bytes": 735828
+  },
+  "02b_MABI_PEDOT_5_1/equilibrium.csv": {
+    "sha256": "e5eff0323c621c8d9235fd774afe96aec8a1d3bd33eafde700d860d9414a9011",
+    "bytes": 455
+  },
+  "02b_MABI_PEDOT_5_1/dos.csv": {
+    "sha256": "c068c88a974ea5259d6f05816de43f273afdb37bb53f887097b9bffb3c5bfc93",
+    "bytes": 2099407
+  },
+  "02b_MABI_PEDOT_5_1/README.md": {
+    "sha256": "2c229d5f13df7665776004f7ea5a21230fd2b6be91a383a8e4a0455be881ed64",
+    "bytes": 8640
+  },
+  "02b_MABI_PEDOT_5_1/model.csv": {
+    "sha256": "151c44868f279c23adba935e8fc5f43656e494150507785106b06954ac2ddd03",
+    "bytes": 6081572
+  },
+  "02b_MABI_PEDOT_5_1/measured.csv": {
+    "sha256": "1f7357b0a8b42f476df5eda4043cbcc01793474a65746b34b7b49ce2116a1c25",
+    "bytes": 732477
+  }
+}
