@@ -17,39 +17,110 @@ The project is under active development. The notebooks are working examples for 
 
 This is an analysis workflow with explicitly supplied parameters. It does not automatically fit parameters or solve the spatial transport equations.
 
-## Getting started
+## Running an example in VS Code — first-time setup
 
-Clone the repository and create a virtual environment:
+A notebook (`.ipynb`) combines explanatory text with small blocks of Python code called **cells**. You run the cells inside VS Code, and the results and plots appear below them. The **kernel** is the Python process that runs those cells.
 
-```bash
-git clone https://github.com/FCH-VUT-LOEF/ASCLC_Pythonized.git
-cd ASCLC_Pythonized
-python -m venv .venv
-```
+### 1. Install Python and VS Code
 
-Activate it on Linux or macOS:
+- Install the desktop version of [Visual Studio Code](https://code.visualstudio.com/).
+- Install [Python](https://www.python.org/downloads/). Python 3.12 is a suitable starting point.
+- On Linux Mint/Ubuntu, Python may already be installed. Install virtual-environment support from a system terminal if needed:
 
 ```bash
-source .venv/bin/activate
+sudo apt install python3 python3-venv
 ```
 
-Or in Windows PowerShell:
+Open VS Code. Click the **Extensions** icon in the left sidebar (four squares), search for each of the following, and install the versions published by **Microsoft**:
+
+- **Python**
+- **Jupyter**
+
+### 2. Download and open the project
+
+1. Open [the repository](https://github.com/FCH-VUT-LOEF/ASCLC_Pythonized) in your browser.
+2. Click the green **Code** button, then **Download ZIP**.
+3. Extract the ZIP into a normal folder on your computer. Do not open files from inside the ZIP.
+4. In VS Code, select **File → Open Folder** and open the extracted project folder.
+5. In the left-hand file list, you should see `asclc_backend.py`, `asclc_workflow.py`, `notebooks`, and `data`. If you only see another folder with the project name, open that inner folder instead.
+
+Git is optional for this route. Keep the whole folder together: the example notebooks need the Python modules and data beside them.
+
+### 3. Create a Python environment for the project
+
+An environment keeps this project's Python packages together.
+
+1. Open **View → Command Palette**.
+2. Type **Python: Create Environment** and select it.
+3. Select **Venv**.
+4. Choose your installed Python interpreter, for example Python 3.12.
+5. If asked to choose a dependency file, skip that step; install the packages below.
+
+VS Code creates a folder called `.venv` inside the project.
+
+### 4. Install the required packages
+
+Open **Terminal → New Terminal** in VS Code. The terminal is the text panel where you enter commands.
+
+Use the command for your operating system, one line at a time, pressing **Enter** after each line. These commands explicitly use the project's environment, so activation is not required.
+
+**Windows PowerShell:**
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install "numpy>=2.0" matplotlib ipykernel
 ```
 
-Install the notebook dependencies and start JupyterLab:
+**Linux or macOS:**
 
 ```bash
-python -m pip install --upgrade pip
-python -m pip install "numpy>=2.0" matplotlib jupyterlab
-jupyter lab notebooks/asclc.ipynb
+./.venv/bin/python -m pip install --upgrade pip
+./.venv/bin/python -m pip install "numpy>=2.0" matplotlib ipykernel
 ```
 
-NumPy 2.0 or newer is needed by the notebook's `np.trapezoid` diagnostic. The modules are imported directly from this checkout; no package installation is required.
+Wait until installation finishes and the terminal prompt returns. NumPy handles numerical arrays, Matplotlib draws the plots, and IPyKernel runs Python notebook cells. The example uses `np.trapezoid`, which requires NumPy 2.0 or newer.
 
-You can also open the notebooks in VS Code with its Python and Jupyter extensions and select the virtual environment as the notebook kernel.
+### 5. Open the example and select its kernel
+
+1. Expand `notebooks` in the left-hand file list.
+2. Open `asclc.ipynb`. This is a working example using an included dataset.
+3. Click **Select Kernel** in the notebook's upper-right corner.
+4. If needed, choose **Select Another Kernel → Python Environments**.
+5. Select the Python environment whose path contains this project's `.venv` folder.
+
+Selecting the notebook kernel matters even if you already selected a Python interpreter elsewhere in VS Code. No remote Jupyter server or browser-based JupyterLab session is needed.
+
+### 6. Run the example
+
+For the first run, leave the example's sample parameters unchanged.
+
+Click **Run All** in the notebook toolbar. Alternatively, select the first code cell and press **Shift+Enter** repeatedly to run cells in order.
+
+A cell shows `[*]` while it is running and a number such as `[1]` when it finishes. Wait for the calculations to finish; plots and printed results appear below the cells. If a cell reports an error, resolve it before continuing with later cells.
+
+The final export cell saves figures and `measured.csv` into the project's `outputs` folder. Press **Ctrl+S** to save the notebook itself.
+
+### 7. Reopen it later
+
+Open the same project folder in VS Code, open the notebook, check that its kernel still points to `.venv`, and click **Run All**. You do not need to recreate the environment or reinstall packages each time.
+
+After editing inputs, rerun the notebook from the top. Use **Restart Kernel**, then **Run All**, when you want to clear variables left over from an earlier run.
+
+### Common setup problems
+
+| Problem | What to check |
+| --- | --- |
+| No Python interpreter is offered | Install Python, restart VS Code, then repeat **Python: Create Environment**. |
+| Creating the environment fails on Linux Mint/Ubuntu | Install `python3-venv`, then retry. |
+| No notebook controls appear | Check that Microsoft's **Jupyter** extension is installed and enabled. |
+| `No module named numpy`, `matplotlib`, or `ipykernel` | Run the installation commands above and select the matching `.venv` notebook kernel. |
+| `No module named asclc_workflow` or `asclc_backend` | Open the complete project folder, with the modules at its root, and keep the notebook inside `notebooks/`. |
+| `FileNotFoundError` | Check that the ZIP was fully extracted and the `data/` folder and configured input file exist. |
+| NumPy has no attribute `trapezoid` | Install `"numpy>=2.0"` in `.venv`, then restart the notebook kernel. |
+| PowerShell says script execution is disabled | Use the explicit `python.exe` commands above; they do not require running an activation script. |
+
+VS Code's official guides cover [notebook controls](https://code.visualstudio.com/docs/datascience/jupyter-notebooks) and [kernel selection](https://code.visualstudio.com/docs/datascience/jupyter-kernel-management).
+
 
 ## Example notebooks
 
@@ -141,4 +212,3 @@ python -m pytest
 The existing tests cover CSV handling, smoothing, local slopes, analytical transport limits, density-of-states calculations, occupations, Fermi-level calculations, and temperature workflows. Source-comparison checks and archived results are documented under [reference results](docs/reference_results/README.md).
 
 Before changing the implementation, read [AGENTS.md](AGENTS.md). Preserve supplied parameters, numerical grids, existing user edits, and documented density conventions.
-
